@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NovaTap</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Script Oficial de Adsgram -->
+    <script src="https://sad.adsgram.ai/js/sad-index.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; }
         body {
@@ -31,12 +33,12 @@
         .score-container { margin: 15px 0; }
         .points-display { font-size: 40px; font-weight: bold; color: #fff; text-shadow: 0 0 15px rgba(0,210,255,0.6); }
 
-        .tap-area { position: relative; display: flex; justify-content: center; align-items: center; margin: 20px 0; }
+        .tap-area { position: relative; display: flex; justify-content: center; align-items: center; margin: 15px 0; }
         .coin-btn {
-            width: 200px; height: 200px; border-radius: 50%;
+            width: 190px; height: 190px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #00f2fe 0%, #4facfe 100%);
             border: 5px solid #ffffff; box-shadow: 0 0 30px rgba(79, 172, 254, 0.6);
-            display: flex; align-items: center; justify-content: center; font-size: 85px;
+            display: flex; align-items: center; justify-content: center; font-size: 80px;
             cursor: pointer; transition: transform 0.08s ease;
         }
         .coin-btn:active { transform: scale(0.92); }
@@ -58,7 +60,13 @@
         .progress-bar-bg { width: 100%; height: 10px; background: #161b26; border-radius: 10px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #00d2ff, #0052d4); }
 
-        /* Barra de Navegación Inferior */
+        .btn-ad {
+            background: linear-gradient(90deg, #ff9900, #ff5500); border: none; color: white;
+            padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 14px;
+            cursor: pointer; width: 100%; margin-top: 10px; box-shadow: 0 0 15px rgba(255, 153, 0, 0.4);
+        }
+
+        /* Navegación */
         .navbar {
             display: flex; justify-content: space-around; background: #121624;
             padding: 10px 0; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
@@ -70,7 +78,6 @@
         .nav-btn.active { color: #00d2ff; font-weight: bold; }
         .nav-btn span { font-size: 20px; }
 
-        /* Estilos Pestaña Amigos */
         .ref-box {
             background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 15px;
             width: 100%; margin: 15px 0; border: 1px solid rgba(0, 210, 255, 0.2);
@@ -86,10 +93,10 @@
 
     <div class="header">
         <div class="title">NOVATAP</div>
-        <div class="user-rank" id="userRank">👑 Rango: Novato</div>
+        <div class="user-rank">👑 Rango: Novato</div>
     </div>
 
-    <!-- PESTAÑA 1: JUEGO -->
+    <!-- PESTAÑA JUEGO -->
     <div id="tabGame" class="tab-content active">
         <div class="score-container">
             <div class="points-display">🪙 <span id="points">0</span></div>
@@ -107,35 +114,25 @@
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="energyFill"></div>
             </div>
+            <button class="btn-ad" id="adBtn">📺 Ver Anuncio para Recargar Energía (+1000)</button>
         </div>
     </div>
 
-    <!-- PESTAÑA 2: AMIGOS (REFERIDOS) -->
+    <!-- PESTAÑA AMIGOS -->
     <div id="tabFriends" class="tab-content">
         <h2>👥 Invita Amigos</h2>
-        <p style="color: #a0aec0; font-size: 14px;">¡Gana +5,000 puntos por cada amigo que se una con tu enlace!</p>
+        <p style="color: #a0aec0; font-size: 14px;">¡Gana +5,000 puntos por cada amigo que se una!</p>
         
         <div class="ref-box">
             <h3>Amigos Invitados: <span id="refCount" style="color: #00d2ff;">0</span></h3>
             <button class="btn-invite" id="inviteBtn">🚀 Invitar a un Amigo</button>
         </div>
-
-        <div style="text-align: left; width: 100%; color: #a0aec0; font-size: 13px;">
-            <p>🎁 <strong>Recompensas:</strong></p>
-            <p>• 1 Amigo: +5,000 Puntos</p>
-            <p>• 3 Amigos: Desbloquea Clics x2</p>
-            <p>• 5 Amigos: Desbloquea Auto-Bot</p>
-        </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN -->
+    <!-- NAVEGACIÓN -->
     <div class="navbar">
-        <button class="nav-btn active" onclick="switchTab('tabGame', this)">
-            <span>🎮</span> Juego
-        </button>
-        <button class="nav-btn" onclick="switchTab('tabFriends', this)">
-            <span>👥</span> Amigos
-        </button>
+        <button class="nav-btn active" onclick="switchTab('tabGame', this)"><span>🎮</span> Juego</button>
+        <button class="nav-btn" onclick="switchTab('tabFriends', this)"><span>👥</span> Amigos</button>
     </div>
 
     <script>
@@ -143,7 +140,6 @@
         tg.expand();
 
         const userId = tg.initDataUnsafe?.user?.id || 12345678;
-        // Obtener ID de referido desde el parametro de Telegram
         const startParam = tg.initDataUnsafe?.start_param || "";
         const refId = startParam.replace('ref_', '');
 
@@ -156,13 +152,21 @@
 
         let maxEnergy = 1000;
 
+        // BLOCK ID DE ADSGRAM CONFIGURADO
+        const BLOCK_ID = "50206";
+        let AdController = null;
+
+        if (window.Adsgram) {
+            AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+        }
+
         // Cargar datos
         fetch(`/api/user/${userId}?ref=${refId}`)
             .then(res => res.json())
             .then(data => {
                 pointsEl.innerText = data.points;
                 energyEl.innerText = data.energy;
-                refCountEl.innerText = data.referral_count;
+                if (refCountEl) refCountEl.innerText = data.referral_count;
                 updateBar(data.energy);
             });
 
@@ -170,7 +174,6 @@
             energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
         }
 
-        // Toque en la pantalla
         tapBtn.addEventListener('pointerdown', (e) => {
             fetch('/api/tap', {
                 method: 'POST',
@@ -184,7 +187,6 @@
                     energyEl.innerText = data.energy;
                     updateBar(data.energy);
 
-                    // Animacion flotante
                     const floatEl = document.createElement('div');
                     floatEl.className = 'float-text';
                     floatEl.innerText = `+${data.earned || 1}`;
@@ -197,7 +199,23 @@
             });
         });
 
-        // Cambiar entre pestañas
+        // Evento Ver Anuncio
+        document.getElementById('adBtn').addEventListener('click', () => {
+            if (!AdController) {
+                alert("El sistema de anuncios se está cargando...");
+                return;
+            }
+
+            AdController.show().then((result) => {
+                // Anuncio completado con éxito: dar recompensa
+                alert("🎉 ¡Gracias por ver el anuncio! Tu energía ha sido restaurada a 1000.");
+                energyEl.innerText = 1000;
+                updateBar(1000);
+            }).catch((error) => {
+                alert("Debes ver el video completo para recibir la recompensa.");
+            });
+        });
+
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -205,7 +223,6 @@
             btn.classList.add('active');
         }
 
-        // Botón de invitar amigo
         document.getElementById('inviteBtn').addEventListener('click', () => {
             const inviteUrl = `https://t.me/NovaTapGame_bot/app?startapp=ref_${userId}`;
             const shareText = `¡Únete a NovaTap conmigo y gana 5,000 puntos gratis! 🪙⚡`;
@@ -214,7 +231,7 @@
                 tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(shareText)}`);
             } else {
                 navigator.clipboard.writeText(inviteUrl);
-                alert("¡Enlace de invitación copiado al portapapeles!");
+                alert("¡Enlace copiado!");
             }
         });
     </script>
