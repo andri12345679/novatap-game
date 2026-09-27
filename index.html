@@ -151,16 +151,10 @@
         const tapArea = document.getElementById('tapArea');
 
         let maxEnergy = 1000;
-
-        // BLOCK ID DE ADSGRAM CONFIGURADO
         const BLOCK_ID = "50206";
         let AdController = null;
 
-        if (window.Adsgram) {
-            AdController = window.Adsgram.init({ blockId: BLOCK_ID });
-        }
-
-        // Cargar datos
+        // Cargar datos del usuario
         fetch(`/api/user/${userId}?ref=${refId}`)
             .then(res => res.json())
             .then(data => {
@@ -199,20 +193,23 @@
             });
         });
 
-        // Evento Ver Anuncio
+        // Lógica de Anuncios Mejorada (Carga bajo demanda)
         document.getElementById('adBtn').addEventListener('click', () => {
-            if (!AdController) {
-                alert("El sistema de anuncios se está cargando...");
+            if (typeof window.Adsgram === 'undefined') {
+                alert("El script de publicidad aún está cargando. Espera unos segundos e intentalo de nuevo.");
                 return;
             }
 
+            if (!AdController) {
+                AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+            }
+
             AdController.show().then((result) => {
-                // Anuncio completado con éxito: dar recompensa
                 alert("🎉 ¡Gracias por ver el anuncio! Tu energía ha sido restaurada a 1000.");
                 energyEl.innerText = 1000;
                 updateBar(1000);
             }).catch((error) => {
-                alert("Debes ver el video completo para recibir la recompensa.");
+                alert("En este momento no hay anuncios disponibles o cerraste el video antes de tiempo. Intenta más tarde.");
             });
         });
 
