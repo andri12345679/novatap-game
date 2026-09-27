@@ -66,7 +66,6 @@
             cursor: pointer; width: 100%; margin-top: 10px; box-shadow: 0 0 15px rgba(255, 153, 0, 0.4);
         }
 
-        /* Navegación */
         .navbar {
             display: flex; justify-content: space-around; background: #121624;
             padding: 10px 0; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
@@ -193,23 +192,55 @@
             });
         });
 
-        // Lógica de Anuncios Mejorada (Carga bajo demanda)
-        document.getElementById('adBtn').addEventListener('click', () => {
-            if (typeof window.Adsgram === 'undefined') {
-                alert("El script de publicidad aún está cargando. Espera unos segundos e intentalo de nuevo.");
+        // Función para asegurar la carga del script de Adsgram
+        function ensureAdsgramLoaded(callback) {
+            if (window.Adsgram) {
+                callback();
                 return;
             }
+            const script = document.createElement('script');
+            script.src = "https://sad.adsgram.ai/js/sad-index.js";
+            script.onload = () => callback();
+            script.onerror = () => {
+                alert("No se pudo conectar con el servidor de anuncios. Si usas un bloqueador de anuncios (AdBlock/Brave) o VPN, desactívalo.");
+            };
+            document.head.appendChild(script);
+        }
 
-            if (!AdController) {
-                AdController = window.Adsgram.init({ blockId: BLOCK_ID });
-            }
+        // Lógica de Ver Anuncio
+        document.getElementById('adBtn').addEventListener('click', () => {
+            const adBtn = document.getElementById('adBtn');
+            adBtn.innerText = "⏳ Cargando anuncio...";
+            adBtn.disabled = true;
 
-            AdController.show().then((result) => {
-                alert("🎉 ¡Gracias por ver el anuncio! Tu energía ha sido restaurada a 1000.");
-                energyEl.innerText = 1000;
-                updateBar(1000);
-            }).catch((error) => {
-                alert("En este momento no hay anuncios disponibles o cerraste el video antes de tiempo. Intenta más tarde.");
+            ensureAdsgramLoaded(() => {
+                try {
+                    if (!AdController && window.Adsgram) {
+                        AdController = window.Adsgram.init({ blockId: BLOCK_ID });
+                    }
+
+                    if (AdController) {
+                        AdController.show().then((result) => {
+                            alert("🎉 ¡Gracias por ver el anuncio! Tu energía ha sido restaurada a 1000.");
+                            energyEl.innerText = 1000;
+                            updateBar(1000);
+                            adBtn.innerText = "📺 Ver Anuncio para Recargar Energía (+1000)";
+                            adBtn.disabled = false;
+                        }).catch((error) => {
+                            alert("En este momento no hay anuncios disponibles o cerraste el video antes de tiempo. Intenta en un momento.");
+                            adBtn.innerText = "📺 Ver Anuncio para Recargar Energía (+1000)";
+                            adBtn.disabled = false;
+                        });
+                    } else {
+                        alert("No se pudo inicializar Adsgram. Cierra el juego y vuelve a abrirlo.");
+                        adBtn.innerText = "📺 Ver Anuncio para Recargar Energía (+1000)";
+                        adBtn.disabled = false;
+                    }
+                } catch (e) {
+                    alert("Ocurrió un inconveniente al mostrar el anuncio. Intenta más tarde.");
+                    adBtn.innerText = "📺 Ver Anuncio para Recargar Energía (+1000)";
+                    adBtn.disabled = false;
+                }
             });
         });
 
